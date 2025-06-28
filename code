@@ -1,0 +1,33 @@
+import pandas as pd
+import matplotlib.pyplot as plt
+
+country = input("Enter the country name (e.g., India, United States): ").strip().lower()
+
+url = "https://covid.ourworldindata.org/data/owid-covid-data.csv"
+print("Downloading and processing data, please wait...")
+
+use_cols = ['location', 'date', 'new_cases', 'new_deaths']
+df = pd.read_csv(url, usecols=use_cols)
+
+df['location_lower'] = df['location'].str.lower()
+country_df = df[df['location_lower'] == country]
+
+if country_df.empty:
+    print(f"No data found for country: {country}")
+else:
+    country_df = country_df.drop(columns='location_lower')
+    country_df['date'] = pd.to_datetime(country_df['date'])
+    country_df.loc[:, ['new_cases', 'new_deaths']] = country_df[['new_cases', 'new_deaths']].fillna(0)
+    country_df['new_cases_avg'] = country_df['new_cases'].rolling(window=7).mean()
+    country_df['new_deaths_avg'] = country_df['new_deaths'].rolling(window=7).mean()
+
+    plt.figure(figsize=(14, 6))
+    plt.plot(country_df['date'], country_df['new_cases_avg'], label='7-Day Avg New Cases', color='blue')
+    plt.plot(country_df['date'], country_df['new_deaths_avg'], label='7-Day Avg New Deaths', color='red')
+    plt.title(f'COVID-19 Trends in {country.title()} ', fontsize=14)
+    plt.xlabel('Date')
+    plt.ylabel('Number of Cases/Deaths')
+    plt.legend()
+    plt.grid(True)
+    plt.tight_layout()
+    plt.show()
